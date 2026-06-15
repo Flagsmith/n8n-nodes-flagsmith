@@ -19,4 +19,11 @@ describe('isValidSignature', () => {
   it('rejects when body is tampered', () => {
     expect(isValidSignature(body + ' ', goodSig, secret)).toBe(false);
   });
+  it('accepts a known precomputed signature vector', () => {
+    const knownSig = '783ec58eee6dadac9fe9d638deb603e895ea2f07bc3dd4c83aa945a633acafbd';
+    expect(isValidSignature(body, knownSig, secret)).toBe(true);
+  });
+  it('verifies a Buffer body identically to a string body', () => {
+    expect(isValidSignature(Buffer.from(body, 'utf8'), goodSig, secret)).toBe(true);
+  });
 });
