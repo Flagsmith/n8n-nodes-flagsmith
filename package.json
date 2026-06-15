@@ -15,7 +15,7 @@
     },
     "repository": {
         "type": "git",
-        "url": "https://github.com/<...>/n8n-nodes-flagsmith.git"
+        "url": "https://github.com/asaphko/n8n-nodes-flagsmith.git"
     },
     "scripts": {
         "build": "n8n-node build",
