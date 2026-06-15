@@ -66,15 +66,27 @@ export class FlagsmithTrigger implements INodeType {
 				// 256 bits of CSPRNG entropy: Flagsmith signs each event with this secret,
 				// so it must be unguessable or signature verification is worthless.
 				const secret = randomBytes(32).toString('hex');
-				const response = (await this.helpers.httpRequestWithAuthentication.call(
-					this,
-					'flagsmithAdminApi',
-					{
-						method: 'POST',
-						url: `${credentials.baseUrl}/environments/${environment}/webhooks/`,
-						body: { url: webhookUrl, enabled: true, secret },
-					},
-				)) as { id?: number };
+				let response: { id?: number };
+				try {
+					response = (await this.helpers.httpRequestWithAuthentication.call(
+						this,
+						'flagsmithAdminApi',
+						{
+							method: 'POST',
+							url: `${credentials.baseUrl}/environments/${environment}/webhooks/`,
+							body: { url: webhookUrl, enabled: true, secret },
+						},
+					)) as { id?: number };
+				} catch (error) {
+					// Flagsmith refuses to register webhooks that target internal or private
+					// addresses (e.g. localhost), so a locally-hosted n8n must be exposed via a
+					// public tunnel. Surface that clearly instead of a generic "bad request".
+					throw new NodeOperationError(
+						this.getNode(),
+						`Could not register the Flagsmith webhook for "${webhookUrl}". Flagsmith must be able to reach this URL and rejects internal or private addresses such as localhost, so a locally-hosted n8n needs a public tunnel.`,
+						{ description: (error as Error).message },
+					);
+				}
 				if (!response.id) {
 					// Registration may have created a webhook in Flagsmith; without the id we
 					// cannot clean it up, so fail loudly rather than store an undefined id.

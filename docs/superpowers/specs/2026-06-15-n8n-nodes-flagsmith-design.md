@@ -1,4 +1,4 @@
-# n8n-nodes-flagsmith — Design Spec
+# n8n-nodes-flagsmith Design Spec
 
 **Date:** 2026-06-15
 **Owner:** Asaph Kotzin (Head of Product, Flagsmith)
@@ -124,4 +124,10 @@ Validated against real Flagsmith; sandbox restored after writes. Corrections fol
 - **Webhook registration** returns `201` with an `id` field (the field the trigger stores); list is a plain array; delete is `204`. Confirmed create/list/delete lifecycle.
 - Get Flags, Get Identity Flags, and Set Trait (segment re-evaluation via `POST /identities/`) all confirmed.
 
-Still requires the node running inside n8n (self-hosted, or post-verification): that `={{$credentials.baseUrl}}` resolves per active credential in `requestDefaults`, and that `req.rawBody` is populated for the trigger's HMAC verification.
+## In-n8n validation (2026-06-15, local self-hosted n8n 2.22.6)
+
+Installed the built node into a local n8n and exercised it via the public API. Findings:
+
+- **Multi-credential routing fix (critical):** n8n's declarative routing engine (`RoutingNode.prepareCredentials`) selects among multiple credentials ONLY via an `authentication` parameter (`getNodeParameter('authentication')`, matched against each credential's `displayOptions.show.authentication`). Gating credentials by `resource` does not work and throws "Could not get parameter". Fixed by adding a hidden `authentication` parameter driven by `resource` (Feature -> `adminApi`, Identity/Environment -> `environmentApi`) and keying the credentials' `displayOptions` on it. UX is unchanged (the user never picks an auth method).
+- **All four operations confirmed end to end in n8n:** Get Flags, Get Identity Flags (query interpolation), Set Trait (preSend traits body), Update Feature State (Admin credential, PATCH, three-way enabled control; mutation confirmed by read-back and restored). `={{$credentials.baseUrl}}` resolves correctly per active credential for both the edge and admin APIs.
+- **Trigger registration requires a public URL:** Flagsmith refuses webhook URLs targeting internal/private addresses (`"Webhook URLs must not target internal or private network addresses."`), so the trigger cannot activate against a localhost n8n. The trigger's `create` hook behaves correctly; the node now surfaces a clear error explaining the public-URL requirement. The inbound callback + `req.rawBody` HMAC path still needs a public tunnel (or post-verification on n8n Cloud) to exercise.

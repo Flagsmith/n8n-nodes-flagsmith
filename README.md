@@ -86,7 +86,7 @@ On workflow activation, the node calls the Flagsmith API to register a webhook f
 
 Canonical use: flag changed, post a message to Slack, open a ticket in Jira, or sync the state to an external system.
 
-**Important:** Flagsmith must be able to POST back to your n8n instance. The trigger needs a publicly reachable URL. For local development, run n8n behind a tunnel (e.g. ngrok or Cloudflare Tunnel) and set the n8n webhook base URL to the tunnel address.
+**Important:** Flagsmith must be able to POST back to your n8n instance. The trigger needs a publicly reachable URL. Flagsmith rejects webhook URLs that target internal or private addresses (such as localhost), so a locally-hosted n8n will fail to activate the trigger until it is exposed publicly. For local development, run n8n behind a tunnel (e.g. ngrok or Cloudflare Tunnel) and set the n8n webhook base URL to the tunnel address.
 
 ---
 
