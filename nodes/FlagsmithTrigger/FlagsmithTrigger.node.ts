@@ -6,8 +6,12 @@ import {
 	INodeType,
 	INodeTypeDescription,
 	IWebhookResponseData,
+	JsonObject,
+	NodeApiError,
 	NodeConnectionTypes,
+	NodeOperationError,
 } from 'n8n-workflow';
+import { randomBytes } from 'crypto';
 import { isValidSignature } from '../shared/signature';
 import { passesFeatureFilter } from '../shared/filter';
 
@@ -59,7 +63,9 @@ export class FlagsmithTrigger implements INodeType {
 				const webhookUrl = this.getNodeWebhookUrl('default') as string;
 				const environment = this.getNodeParameter('environment') as string;
 				const credentials = await this.getCredentials('flagsmithAdminApi');
-				const secret = Buffer.from(`${Date.now()}-${webhookUrl}`).toString('base64');
+				// 256 bits of CSPRNG entropy: Flagsmith signs each event with this secret,
+				// so it must be unguessable or signature verification is worthless.
+				const secret = randomBytes(32).toString('hex');
 				const response = (await this.helpers.httpRequestWithAuthentication.call(
 					this,
 					'flagsmithAdminApi',
@@ -68,7 +74,15 @@ export class FlagsmithTrigger implements INodeType {
 						url: `${credentials.baseUrl}/environments/${environment}/webhooks/`,
 						body: { url: webhookUrl, enabled: true, secret },
 					},
-				)) as { id: number };
+				)) as { id?: number };
+				if (!response.id) {
+					// Registration may have created a webhook in Flagsmith; without the id we
+					// cannot clean it up, so fail loudly rather than store an undefined id.
+					throw new NodeOperationError(
+						this.getNode(),
+						`Flagsmith webhook registration returned an unexpected response: ${JSON.stringify(response)}`,
+					);
+				}
 				const webhookData = this.getWorkflowStaticData('node');
 				webhookData.webhookId = response.id;
 				webhookData.secret = secret;
@@ -85,8 +99,15 @@ export class FlagsmithTrigger implements INodeType {
 						method: 'DELETE',
 						url: `${credentials.baseUrl}/environments/${environment}/webhooks/${webhookData.webhookId}/`,
 					});
-				} catch {
-					return false;
+				} catch (error) {
+					const status = error as {
+						httpCode?: number | string;
+						statusCode?: number;
+						response?: { status?: number };
+					};
+					const code = Number(status.httpCode ?? status.statusCode ?? status.response?.status);
+					// Already gone in Flagsmith: treat as a successful cleanup.
+					if (code !== 404) throw new NodeApiError(this.getNode(), error as JsonObject);
 				}
 				delete webhookData.webhookId;
 				delete webhookData.secret;
@@ -113,6 +134,12 @@ export class FlagsmithTrigger implements INodeType {
 				res.status(401).send('Invalid signature');
 				return { noWebhookResponse: true };
 			}
+		} else {
+			// No stored secret (e.g. static data lost): accept without verification, but
+			// make the unsigned path visible rather than silently trusting the caller.
+			this.logger?.warn(
+				'Flagsmith Trigger: no signing secret stored; accepting webhook without signature verification.',
+			);
 		}
 
 		const body = this.getBodyData() as IDataObject;
