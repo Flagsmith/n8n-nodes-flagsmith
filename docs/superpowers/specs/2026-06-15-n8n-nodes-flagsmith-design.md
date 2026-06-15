@@ -111,5 +111,17 @@ Webhook trigger payload: `{ event_type: "FLAG_UPDATED", data: { changed_by, new_
 ## What is needed from the owner at build/test time
 
 - Sandbox: an org API token + one environment key + the project/environment names.
-- A reachable n8n for the trigger round-trip (tunnel or hosted).
+- A reachable n8n for the trigger round-trip (tunnel or hosted). Note: n8n Cloud installs verified community nodes only, so in-n8n testing of the unverified package requires a self-hosted n8n (or waits until after verification). The webhook payload/signature can still be captured on Cloud using the built-in Webhook node.
 - The Flagsmith-org GitHub repo + npm publish rights / Trusted Publisher config (needed only for the verified-publish step, not the build).
+
+## Live API validation (2026-06-15, sandbox: project ExperiFlag / env Development)
+
+Validated against real Flagsmith; sandbox restored after writes. Corrections folded into the code:
+
+- **featurestates is paginated** as `{count, next, previous, results: [...]}`, not a bare array. loadOptions unwraps `results` (tolerates a bare array too).
+- **featurestates items return `feature` as an integer id**, not a `{id, name}` object. The Feature dropdown therefore joins env featurestates (for the feature-state `id`) against the project features list `GET /projects/{project_id}/features/` (for names), resolving the project id via `GET /environments/{env_api_key}/`. The project features list is also paginated.
+- **Update Feature State**: `PATCH .../featurestates/{id}/` with `{feature_state_value}` and/or `{enabled}` works and persists (confirmed by read-back), but the PATCH **response body returns `feature_state_value: null`** on success. The node surfaces this response verbatim, so a successful value update can look empty in the node output even though the write took effect.
+- **Webhook registration** returns `201` with an `id` field (the field the trigger stores); list is a plain array; delete is `204`. Confirmed create/list/delete lifecycle.
+- Get Flags, Get Identity Flags, and Set Trait (segment re-evaluation via `POST /identities/`) all confirmed.
+
+Still requires the node running inside n8n (self-hosted, or post-verification): that `={{$credentials.baseUrl}}` resolves per active credential in `requestDefaults`, and that `req.rawBody` is populated for the trigger's HMAC verification.
