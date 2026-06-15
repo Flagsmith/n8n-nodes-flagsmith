@@ -1,0 +1,14 @@
+{
+  "node": "n8n-nodes-flagsmith.flagsmith",
+  "nodeVersion": "1.0",
+  "codexVersion": "1.0",
+  "categories": ["Development", "Utility"],
+  "resources": {
+    "credentialDocumentation": [
+      { "url": "https://docs.flagsmith.com/integrating-with-flagsmith/flagsmith-api-overview" }
+    ],
+    "primaryDocumentation": [
+      { "url": "https://docs.flagsmith.com/integrating-with-flagsmith/flagsmith-api-overview" }
+    ]
+  }
+}
