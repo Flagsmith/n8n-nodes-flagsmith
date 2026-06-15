@@ -21,12 +21,12 @@ export class Flagsmith implements INodeType {
 			{
 				name: 'flagsmithAdminApi',
 				required: true,
-				displayOptions: { show: { resource: ['feature'] } },
+				displayOptions: { show: { authentication: ['adminApi'] } },
 			},
 			{
 				name: 'flagsmithEnvironmentApi',
 				required: true,
-				displayOptions: { show: { resource: ['identity', 'environment'] } },
+				displayOptions: { show: { authentication: ['environmentApi'] } },
 			},
 		],
 		requestDefaults: {
@@ -45,6 +45,25 @@ export class Flagsmith implements INodeType {
 					{ name: 'Identity', value: 'identity' },
 				],
 				default: 'environment',
+			},
+			// n8n's routing engine selects among multiple credentials by an `authentication`
+			// parameter. We drive it automatically from the resource (hidden from the user)
+			// so the correct credential is used without the user having to know which API
+			// backs an operation. Feature ops use the Admin API; Identity/Environment ops
+			// use the Environment (Flags) API.
+			{
+				displayName: 'Authentication',
+				name: 'authentication',
+				type: 'hidden',
+				default: 'adminApi',
+				displayOptions: { show: { resource: ['feature'] } },
+			},
+			{
+				displayName: 'Authentication',
+				name: 'authentication',
+				type: 'hidden',
+				default: 'environmentApi',
+				displayOptions: { show: { resource: ['identity', 'environment'] } },
 			},
 			...environmentOperations,
 			...environmentFields,
