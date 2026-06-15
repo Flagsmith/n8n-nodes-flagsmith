@@ -1,73 +1,103 @@
-# n8n-nodes-flagsmith-scaffold
+# n8n-nodes-flagsmith
 
-This is an n8n community node. It lets you use GitHub Issues in your n8n workflows.
-
-[n8n](https://n8n.io/) is a [fair-code licensed](https://docs.n8n.io/sustainable-use-license/) workflow automation platform.
+An n8n community node that lets you read and control [Flagsmith](https://flagsmith.com) feature flags directly in your workflows, and trigger workflows automatically when a flag changes. Use it to build flag-driven automation: kill-switch responses, CRM-to-segment pipelines, or Slack alerts on every flag change.
 
 [Installation](#installation)
-[Operations](#operations)
 [Credentials](#credentials)
+[Operations](#operations)
+[Trigger](#trigger)
 [Compatibility](#compatibility)
-[Usage](#usage)
 [Resources](#resources)
+
+---
 
 ## Installation
 
-Follow the [installation guide](https://docs.n8n.io/integrations/community-nodes/installation/) in the n8n community nodes documentation.
+Search for **`n8n-nodes-flagsmith`** in the n8n community nodes panel.
 
-## Operations
+Full step-by-step instructions are in the [n8n community nodes installation guide](https://docs.n8n.io/integrations/community-nodes/installation/).
 
-- Issues
-    - Get an issue
-    - Get many issues in a repository
-    - Create a new issue
-- Issue Comments
-    - Get many issue comments
+Verified installs from the n8n Cloud canvas and from self-hosted n8n instances both work.
+
+---
 
 ## Credentials
 
-You can use either access token or OAuth2 to use this node.
+The package ships two credential types. Both expose an optional **Base URL** field so you can point the node at a self-hosted Flagsmith instance or a Private Cloud endpoint instead of the Flagsmith SaaS defaults.
 
-### Access token
+### Flagsmith Admin API Key
 
-1. Open your GitHub profile [Settings](https://github.com/settings/profile).
-2. In the left navigation, select [Developer settings](https://github.com/settings/apps).
-3. In the left navigation, under Personal access tokens, select Tokens (classic).
-4. Select Generate new token > Generate new token (classic).
-5. Enter a descriptive name for your token in the Note field, like n8n integration.
-6. Select the Expiration you'd like for the token, or select No expiration.
-7. Select Scopes for your token. For most of the n8n GitHub nodes, add the `repo` scope.
-    - A token without assigned scopes can only access public information.
-8. Select Generate token.
-9. Copy the token.
+Used by operations that read or write flag state across environments (Get Flags, Get Identity Flags, Set Trait, Update Feature State).
 
-Refer to [Creating a personal access token (classic)](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens#creating-a-personal-access-token-classic) for more information. Refer to Scopes for OAuth apps for more information on GitHub scopes.
+Where to get it: Flagsmith dashboard, **Organisation Settings** (top-right avatar menu), then the **API Keys** tab. Create a new key scoped to your organisation. This key is org-wide and should be treated as a secret.
 
-![Generated Access token in GitHub](https://docs.github.com/assets/cb-17251/mw-1440/images/help/settings/personal-access-tokens.webp)
+Default Base URL: `https://api.flagsmith.com/api/v1`
 
-### OAuth2
+### Flagsmith Environment API Key
 
-If you're self-hosting n8n, create a new GitHub [OAuth app](https://docs.github.com/en/apps/oauth-apps):
+Used internally by the Trigger node to register and verify environment webhooks.
 
-1. Open your GitHub profile [Settings](https://github.com/settings/profile).
-2. In the left navigation, select [Developer settings](https://github.com/settings/apps).
-3. In the left navigation, select OAuth apps.
-4. Select New OAuth App.
-    - If you haven't created an app before, you may see Register a new application instead. Select it.
-5. Enter an Application name, like n8n integration.
-6. Enter the Homepage URL for your app's website.
-7. If you'd like, add the optional Application description, which GitHub displays to end-users.
-8. From n8n, copy the OAuth Redirect URL and paste it into the GitHub Authorization callback URL.
-9. Select Register application.
-10. Copy the Client ID and Client Secret this generates and add them to your n8n credential.
+Where to get it: Flagsmith dashboard, open your **Environment** (e.g. Production), then **Environment Settings** at the bottom of the left sidebar. The client-side environment key is shown on that page. It is per-environment and scoped to one environment only.
 
-Refer to the [GitHub Authorizing OAuth apps documentation](https://docs.github.com/en/apps/oauth-apps/using-oauth-apps/authorizing-oauth-apps) for more information on the authorization process.
+Default Base URL: `https://edge.api.flagsmith.com/api/v1`
+
+---
+
+## Operations
+
+The **Flagsmith** action node supports four operations across three resources.
+
+### Environment resource
+
+**Get Flags** (resource: Environment)
+
+Fetches every feature flag and remote config value for a given environment. Use this as a branch-on-state read, for example: check a flag at the start of a workflow and route to different branches depending on whether it is enabled.
+
+### Identity resource
+
+**Get Identity Flags** (resource: Identity)
+
+Evaluates all flags and traits for a specific identity (user or device). Answers the question "is this feature on for this customer?" and returns any per-identity trait values alongside it. Useful in CRM or support workflows where you need flag state in the context of a single user.
+
+**Set Trait** (resource: Identity)
+
+Writes one or more traits onto an identity. Flagsmith re-evaluates all segment rules immediately, so any flag that is gated on a segment will flip the moment the trait changes.
+
+Hero example: a deal closes in your CRM and an automation fires, calling Set Trait with `plan=enterprise` for that customer's identity. Every feature gated on the "Enterprise" segment enables automatically, with no code deploy needed.
+
+### Feature resource
+
+**Update Feature State** (resource: Feature)
+
+Sets the enabled state, the value, or both, for a specific flag in a specific environment.
+
+Two hero examples:
+
+1. Your monitoring tool fires an alert. The workflow calls Update Feature State to disable a flag instantly, cutting off a broken feature for all users (kill-switch).
+2. A configuration row changes in a database. The workflow pushes the new value to Flagsmith so every SDK poll picks up the updated config without a deploy.
+
+---
+
+## Trigger
+
+The **Flagsmith Trigger** node fires a workflow whenever a flag changes in a given environment.
+
+On workflow activation, the node calls the Flagsmith API to register a webhook for the selected environment. On deactivation it removes the webhook. Incoming payloads are verified against the `X-Flagsmith-Signature` header before the workflow continues.
+
+Canonical use: flag changed, post a message to Slack, open a ticket in Jira, or sync the state to an external system.
+
+**Important:** Flagsmith must be able to POST back to your n8n instance. The trigger needs a publicly reachable URL. For local development, run n8n behind a tunnel (e.g. ngrok or Cloudflare Tunnel) and set the n8n webhook base URL to the tunnel address.
+
+---
 
 ## Compatibility
 
-Compatible with n8n@1.60.0 or later
+Requires n8n 1.60.0 or later.
+
+---
 
 ## Resources
 
-* [n8n community nodes documentation](https://docs.n8n.io/integrations/#community-nodes)
-* [GitHub API docs](https://docs.github.com/en/rest/issues)
+- [Flagsmith documentation](https://docs.flagsmith.com)
+- [Flagsmith REST API overview](https://docs.flagsmith.com/clients/rest)
+- [n8n community nodes documentation](https://docs.n8n.io/integrations/community-nodes/)
