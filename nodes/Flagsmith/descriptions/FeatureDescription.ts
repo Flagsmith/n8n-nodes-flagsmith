@@ -9,9 +9,12 @@ export async function buildUpdateFeatureStateBody(
 	requestOptions: IHttpRequestOptions,
 ): Promise<IHttpRequestOptions> {
 	const body: Record<string, unknown> = {};
-	const enabled = this.getNodeParameter('enabled', null);
+	const enabledState = this.getNodeParameter('enabledState', 'unchanged') as string;
 	const value = this.getNodeParameter('featureStateValue', null);
-	if (enabled !== null && enabled !== undefined) body.enabled = enabled;
+	// Only write `enabled` when the user explicitly chose a state, so a value-only
+	// update never silently toggles a live flag.
+	if (enabledState === 'enable') body.enabled = true;
+	else if (enabledState === 'disable') body.enabled = false;
 	if (value !== null && value !== undefined && value !== '') {
 		body.feature_state_value = value;
 	}
@@ -66,12 +69,17 @@ export const featureFields: INodeProperties[] = [
 		description: 'Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>',
 	},
 	{
-		displayName: 'Enabled',
-		name: 'enabled',
-		type: 'boolean',
-		default: false,
+		displayName: 'Enabled State',
+		name: 'enabledState',
+		type: 'options',
+		default: 'unchanged',
 		displayOptions: { show: { resource: ['feature'], operation: ['updateFeatureState'] } },
-		description: 'Whether the flag is enabled in this environment',
+		options: [
+			{ name: 'Disable', value: 'disable' },
+			{ name: 'Enable', value: 'enable' },
+			{ name: 'Leave Unchanged', value: 'unchanged' },
+		],
+		description: 'Whether to enable, disable, or leave unchanged the flag in this environment',
 	},
 	{
 		displayName: 'Value',

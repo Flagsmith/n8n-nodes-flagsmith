@@ -27,7 +27,7 @@ The package ships two credential types. Both expose an optional **Base URL** fie
 
 ### Flagsmith Admin API Key
 
-Used by operations that read or write flag state across environments (Get Flags, Get Identity Flags, Set Trait, Update Feature State).
+Used by **Update Feature State** (writing a flag's state in an environment) and by the **Flagsmith Trigger** node, which registers and verifies environment webhooks through the Admin API.
 
 Where to get it: Flagsmith dashboard, **Organisation Settings** (top-right avatar menu), then the **API Keys** tab. Create a new key scoped to your organisation. This key is org-wide and should be treated as a secret.
 
@@ -35,7 +35,7 @@ Default Base URL: `https://api.flagsmith.com/api/v1`
 
 ### Flagsmith Environment API Key
 
-Used internally by the Trigger node to register and verify environment webhooks.
+Used by the flag-evaluation operations: **Get Flags**, **Get Identity Flags**, and **Set Trait**.
 
 Where to get it: Flagsmith dashboard, open your **Environment** (e.g. Production), then **Environment Settings** at the bottom of the left sidebar. The client-side environment key is shown on that page. It is per-environment and scoped to one environment only.
 
@@ -69,7 +69,7 @@ Hero example: a deal closes in your CRM and an automation fires, calling Set Tra
 
 **Update Feature State** (resource: Feature)
 
-Sets the enabled state, the value, or both, for a specific flag in a specific environment.
+Sets the enabled state (Enable, Disable, or Leave Unchanged), the value, or both, for a specific flag in a specific environment. The enabled state defaults to Leave Unchanged, so a value-only update never toggles the flag.
 
 Two hero examples:
 
