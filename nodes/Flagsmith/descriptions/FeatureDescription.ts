@@ -55,7 +55,7 @@ export const featureFields: INodeProperties[] = [
 		description: 'The environment api_key to target',
 	},
 	{
-		displayName: 'Feature ID',
+		displayName: 'Feature Name or ID',
 		name: 'featureStateId',
 		type: 'options',
 		required: true,
