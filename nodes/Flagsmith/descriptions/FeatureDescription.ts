@@ -1,8 +1,4 @@
-import {
-	IExecuteSingleFunctions,
-	IHttpRequestOptions,
-	INodeProperties,
-} from 'n8n-workflow';
+import { IExecuteSingleFunctions, IHttpRequestOptions, INodeProperties } from 'n8n-workflow';
 
 export async function buildUpdateFeatureStateBody(
 	this: IExecuteSingleFunctions,
@@ -34,7 +30,7 @@ export const featureOperations: INodeProperties[] = [
 				name: 'Update Feature State',
 				value: 'updateFeatureState',
 				action: 'Update a feature state in an environment',
-				description: 'Set enabled and/or value for a flag in an environment',
+				description: 'Set as enabled or define a value for a flag in an environment',
 				routing: {
 					request: {
 						method: 'PATCH',
@@ -59,14 +55,15 @@ export const featureFields: INodeProperties[] = [
 		description: 'The environment api_key to target',
 	},
 	{
-		displayName: 'Feature Name or ID',
+		displayName: 'Feature ID',
 		name: 'featureStateId',
 		type: 'options',
 		required: true,
 		default: '',
 		typeOptions: { loadOptionsMethod: 'getFeatureStates', loadOptionsDependsOn: ['environment'] },
 		displayOptions: { show: { resource: ['feature'] } },
-		description: 'Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>',
+		description:
+			'Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>',
 	},
 	{
 		displayName: 'Enabled State',

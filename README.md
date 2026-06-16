@@ -29,7 +29,7 @@ The package ships two credential types. Both expose an optional **Base URL** fie
 
 Used by **Update Feature State** (writing a flag's state in an environment) and by the **Flagsmith Trigger** node, which registers and verifies environment webhooks through the Admin API.
 
-Where to get it: Flagsmith dashboard, **Organisation Settings** (top-right avatar menu), then the **API Keys** tab. Create a new key scoped to your organisation. This key is org-wide and should be treated as a secret.
+Where to get it: Flagsmith dashboard, **Organisation Settings**, then the **API Keys** tab. Create a new key scoped to your organisation. This key is org-wide and should be treated as a secret.
 
 Default Base URL: `https://api.flagsmith.com/api/v1`
 
@@ -37,7 +37,7 @@ Default Base URL: `https://api.flagsmith.com/api/v1`
 
 Used by the flag-evaluation operations: **Get Flags**, **Get Identity Flags**, and **Set Trait**.
 
-Where to get it: Flagsmith dashboard, open your **Environment** (e.g. Production), then **Environment Settings** at the bottom of the left sidebar. The client-side environment key is shown on that page. It is per-environment and scoped to one environment only.
+Where to get it: Flagsmith dashboard, open your **Environment** (e.g. Production), then **SDK Keys** near the bottom of the left sidebar. The client-side environment key is shown on that page. It is per-environment and scoped to one environment only.
 
 Default Base URL: `https://edge.api.flagsmith.com/api/v1`
 

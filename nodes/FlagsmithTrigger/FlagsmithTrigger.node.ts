@@ -83,7 +83,7 @@ export class FlagsmithTrigger implements INodeType {
 					// public tunnel. Surface that clearly instead of a generic "bad request".
 					throw new NodeOperationError(
 						this.getNode(),
-						`Could not register the Flagsmith webhook for "${webhookUrl}". Flagsmith must be able to reach this URL and rejects internal or private addresses such as localhost, so a locally-hosted n8n needs a public tunnel.`,
+						`Could not register the Flagsmith webhook for "${webhookUrl}". Please note that Flagsmith must be able to reach this URL and rejects internal or private addresses such as localhost. additional details about the error:`,
 						{ description: (error as Error).message },
 					);
 				}

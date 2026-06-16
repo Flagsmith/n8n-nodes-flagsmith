@@ -12,7 +12,7 @@ export const environmentOperations: INodeProperties[] = [
 				name: 'Get Flags',
 				value: 'getFlags',
 				action: 'Get all flags for an environment',
-				description: 'Evaluate all flags for the environment',
+				description: 'Get the full list of flags and their status in this environment',
 				routing: { request: { method: 'GET', url: '/flags/' } },
 			},
 		],
