@@ -3,7 +3,8 @@
   "packages": {
     ".": {
       "release-type": "node",
-      "package-name": "n8n-nodes-flagsmith"
+      "package-name": "n8n-nodes-flagsmith",
+      "include-component-in-tag": false
     }
   }
 }
