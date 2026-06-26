@@ -1,4 +1,4 @@
-# n8n-nodes-flagsmith — Design Spec
+# n8n-nodes-flagsmith Design Spec
 
 **Date:** 2026-06-15
 **Owner:** Asaph Kotzin (Head of Product, Flagsmith)
@@ -111,5 +111,24 @@ Webhook trigger payload: `{ event_type: "FLAG_UPDATED", data: { changed_by, new_
 ## What is needed from the owner at build/test time
 
 - Sandbox: an org API token + one environment key + the project/environment names.
-- A reachable n8n for the trigger round-trip (tunnel or hosted).
+- A reachable n8n for the trigger round-trip (tunnel or hosted). Note: n8n Cloud installs verified community nodes only, so in-n8n testing of the unverified package requires a self-hosted n8n (or waits until after verification). The webhook payload/signature can still be captured on Cloud using the built-in Webhook node.
 - The Flagsmith-org GitHub repo + npm publish rights / Trusted Publisher config (needed only for the verified-publish step, not the build).
+
+## Live API validation (2026-06-15, sandbox: project ExperiFlag / env Development)
+
+Validated against real Flagsmith; sandbox restored after writes. Corrections folded into the code:
+
+- **featurestates is paginated** as `{count, next, previous, results: [...]}`, not a bare array. loadOptions unwraps `results` (tolerates a bare array too).
+- **featurestates items return `feature` as an integer id**, not a `{id, name}` object. The Feature dropdown therefore joins env featurestates (for the feature-state `id`) against the project features list `GET /projects/{project_id}/features/` (for names), resolving the project id via `GET /environments/{env_api_key}/`. The project features list is also paginated.
+- **Update Feature State**: `PATCH .../featurestates/{id}/` with `{feature_state_value}` and/or `{enabled}` works and persists (confirmed by read-back), but the PATCH **response body returns `feature_state_value: null`** on success. The node surfaces this response verbatim, so a successful value update can look empty in the node output even though the write took effect.
+- **Webhook registration** returns `201` with an `id` field (the field the trigger stores); list is a plain array; delete is `204`. Confirmed create/list/delete lifecycle.
+- Get Flags, Get Identity Flags, and Set Trait (segment re-evaluation via `POST /identities/`) all confirmed.
+
+## In-n8n validation (2026-06-15, local self-hosted n8n 2.22.6)
+
+Installed the built node into a local n8n and exercised it via the public API. Findings:
+
+- **Multi-credential routing fix (critical):** n8n's declarative routing engine (`RoutingNode.prepareCredentials`) selects among multiple credentials ONLY via an `authentication` parameter (`getNodeParameter('authentication')`, matched against each credential's `displayOptions.show.authentication`). Gating credentials by `resource` does not work and throws "Could not get parameter". Fixed by adding a hidden `authentication` parameter driven by `resource` (Feature -> `adminApi`, Identity/Environment -> `environmentApi`) and keying the credentials' `displayOptions` on it. UX is unchanged (the user never picks an auth method).
+- **All four operations confirmed end to end in n8n:** Get Flags, Get Identity Flags (query interpolation), Set Trait (preSend traits body), Update Feature State (Admin credential, PATCH, three-way enabled control; mutation confirmed by read-back and restored). `={{$credentials.baseUrl}}` resolves correctly per active credential for both the edge and admin APIs.
+- **Trigger registration requires a public URL:** Flagsmith refuses webhook URLs targeting internal/private addresses (`"Webhook URLs must not target internal or private network addresses."`), so the trigger cannot activate against a localhost n8n. The trigger's `create` hook behaves correctly; the node now surfaces a clear error explaining the public-URL requirement.
+- **Full trigger round-trip validated via an ngrok tunnel (n8n started with `WEBHOOK_URL`):** activation registered a Flagsmith webhook at the public URL; toggling the flag delivered a `FLAG_UPDATED` event whose `data.new_state` matched the expected schema; the workflow executed, which confirms `req.rawBody` is populated and the `X-Flagsmith-Signature` HMAC verified. Forged and missing signatures were both rejected with 401 and produced no execution. Deactivation removed the Flagsmith webhook. All deferred runtime unknowns are now resolved.
