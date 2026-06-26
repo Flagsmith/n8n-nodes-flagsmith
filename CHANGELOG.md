@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.1](https://github.com/Flagsmith/n8n-nodes-flagsmith/compare/v0.2.0...v0.2.1) (2026-06-26)
+
+
+### Bug Fixes
+
+* use a reachable author email for node ownership verification ([#7](https://github.com/Flagsmith/n8n-nodes-flagsmith/issues/7)) ([afef876](https://github.com/Flagsmith/n8n-nodes-flagsmith/commit/afef87633cff42292108ec3192c7724fe06d2416))
+
 ## [0.2.0](https://github.com/Flagsmith/n8n-nodes-flagsmith/compare/v0.1.0...v0.2.0) (2026-06-26)
 
 
