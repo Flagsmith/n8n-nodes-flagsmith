@@ -1,6 +1,6 @@
 {
 	"name": "n8n-nodes-flagsmith",
-	"version": "0.2.0",
+	"version": "0.2.1",
 	"description": "n8n node to read and control Flagsmith feature flags, and trigger workflows on flag changes",
 	"license": "MIT",
 	"homepage": "",
