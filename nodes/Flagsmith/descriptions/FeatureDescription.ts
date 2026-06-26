@@ -1,20 +1,29 @@
 import { IExecuteSingleFunctions, IHttpRequestOptions, INodeProperties } from 'n8n-workflow';
+import { experimentsBaseUrl } from '../../shared/features';
 
-export async function buildUpdateFeatureStateBody(
+export async function buildUpdateFlagBody(
 	this: IExecuteSingleFunctions,
 	requestOptions: IHttpRequestOptions,
 ): Promise<IHttpRequestOptions> {
-	const body: Record<string, unknown> = {};
-	const enabledState = this.getNodeParameter('enabledState', 'unchanged') as string;
-	const value = this.getNodeParameter('featureStateValue', null);
-	// Only write `enabled` when the user explicitly chose a state, so a value-only
-	// update never silently toggles a live flag.
-	if (enabledState === 'enable') body.enabled = true;
-	else if (enabledState === 'disable') body.enabled = false;
-	if (value !== null && value !== undefined && value !== '') {
-		body.feature_state_value = value;
-	}
-	requestOptions.body = body;
+	const credentials = await this.getCredentials('flagsmithAdminApi');
+	const environment = this.getNodeParameter('environment') as string;
+	const featureId = this.getNodeParameter('featureId') as number;
+	const enabled = this.getNodeParameter('enabled') as boolean;
+	const valueType = this.getNodeParameter('valueType') as string;
+	const value = this.getNodeParameter('value', '') as string;
+
+	// update-flag-v2 lives under /api/experiments (not /api/v1) and works the same
+	// whether or not the environment has Feature Versioning enabled. It declares
+	// the full environment-default state, so enabled and value are always sent.
+	requestOptions.baseURL = experimentsBaseUrl(credentials.baseUrl as string);
+	requestOptions.url = `/environments/${environment}/update-flag-v2/`;
+	requestOptions.body = {
+		feature: { id: Number(featureId) },
+		environment_default: {
+			enabled,
+			value: { type: valueType, value: String(value ?? '') },
+		},
+	};
 	return requestOptions;
 }
 
@@ -30,13 +39,13 @@ export const featureOperations: INodeProperties[] = [
 				name: 'Update Feature State',
 				value: 'updateFeatureState',
 				action: 'Update a feature state in an environment',
-				description: 'Set as enabled or define a value for a flag in an environment',
+				description: 'Set the enabled state and value of a flag in an environment',
 				routing: {
 					request: {
-						method: 'PATCH',
-						url: '=/environments/{{$parameter.environment}}/featurestates/{{$parameter.featureStateId}}/',
+						method: 'POST',
+						url: '=/environments/{{$parameter.environment}}/update-flag-v2/',
 					},
-					send: { preSend: [buildUpdateFeatureStateBody] },
+					send: { preSend: [buildUpdateFlagBody] },
 				},
 			},
 		],
@@ -56,34 +65,44 @@ export const featureFields: INodeProperties[] = [
 	},
 	{
 		displayName: 'Feature Name or ID',
-		name: 'featureStateId',
+		name: 'featureId',
 		type: 'options',
 		required: true,
 		default: '',
-		typeOptions: { loadOptionsMethod: 'getFeatureStates', loadOptionsDependsOn: ['environment'] },
+		typeOptions: { loadOptionsMethod: 'getFeatures', loadOptionsDependsOn: ['environment'] },
 		displayOptions: { show: { resource: ['feature'] } },
 		description:
 			'Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>',
 	},
 	{
-		displayName: 'Enabled State',
-		name: 'enabledState',
-		type: 'options',
-		default: 'unchanged',
+		displayName: 'Enabled',
+		name: 'enabled',
+		type: 'boolean',
+		default: false,
 		displayOptions: { show: { resource: ['feature'], operation: ['updateFeatureState'] } },
+		description:
+			'Whether the flag is enabled in this environment. This endpoint sets the full state, so it is always applied.',
+	},
+	{
+		displayName: 'Value Type',
+		name: 'valueType',
+		type: 'options',
+		default: 'string',
 		options: [
-			{ name: 'Disable', value: 'disable' },
-			{ name: 'Enable', value: 'enable' },
-			{ name: 'Leave Unchanged', value: 'unchanged' },
+			{ name: 'Boolean', value: 'boolean' },
+			{ name: 'Integer', value: 'integer' },
+			{ name: 'String', value: 'string' },
 		],
-		description: 'Whether to enable, disable, or leave unchanged the flag in this environment',
+		displayOptions: { show: { resource: ['feature'], operation: ['updateFeatureState'] } },
+		description: 'The type of the feature value to set',
 	},
 	{
 		displayName: 'Value',
-		name: 'featureStateValue',
+		name: 'value',
 		type: 'string',
 		default: '',
 		displayOptions: { show: { resource: ['feature'], operation: ['updateFeatureState'] } },
-		description: 'Optional feature state value to set. Leave blank to leave unchanged.',
+		description:
+			'The feature value, sent as a string. For Boolean use "true" or "false"; for Integer use a number. This endpoint always sets the value.',
 	},
 ];

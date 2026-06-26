@@ -2,7 +2,7 @@ import { Icon, INodeType, INodeTypeDescription, NodeConnectionTypes } from 'n8n-
 import { environmentOperations, environmentFields } from './descriptions/EnvironmentDescription';
 import { identityOperations, identityFields } from './descriptions/IdentityDescription';
 import { featureOperations, featureFields } from './descriptions/FeatureDescription';
-import { getFeatureStates } from './methods/loadOptions';
+import { getFeatures } from './methods/loadOptions';
 
 export class Flagsmith implements INodeType {
 	description: INodeTypeDescription = {
@@ -74,5 +74,5 @@ export class Flagsmith implements INodeType {
 		],
 	};
 
-	methods = { loadOptions: { getFeatureStates } };
+	methods = { loadOptions: { getFeatures } };
 }
