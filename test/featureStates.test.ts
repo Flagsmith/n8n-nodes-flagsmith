@@ -1,29 +1,28 @@
 import { describe, it, expect } from 'vitest';
-import { mapFeatureStatesToOptions } from '../nodes/shared/featureStates';
+import { mapFeaturesToOptions } from '../nodes/shared/featureStates';
 
-describe('mapFeatureStatesToOptions', () => {
-  it('joins feature-states to feature names by feature id', () => {
-    // The Admin featurestates endpoint returns `feature` as an id, not an object,
-    // so names come from the project features list and are joined on the id.
-    const states = [
-      { id: 1442707, feature: 211824 },
-      { id: 1442708, feature: 211825 },
-    ];
+describe('mapFeaturesToOptions', () => {
+  it('maps features to {name, feature-state id} from the inline environment_feature_state', () => {
+    // The features endpoint, queried with ?environment=<id>, returns each
+    // feature's environment state inline. We label by feature name and use the
+    // environment_feature_state id as the value (what we PATCH).
     const features = [
-      { id: 211824, name: 'demo_experiment' },
-      { id: 211825, name: 'new_checkout' },
+      { id: 211824, name: 'demo_experiment', environment_feature_state: { id: 1442707 } },
+      { id: 211825, name: 'new_checkout', environment_feature_state: { id: 1442708 } },
     ];
-    expect(mapFeatureStatesToOptions(states, features)).toEqual([
+    expect(mapFeaturesToOptions(features)).toEqual([
       { name: 'demo_experiment', value: 1442707 },
       { name: 'new_checkout', value: 1442708 },
     ]);
   });
-  it('falls back to a feature-id label when the name is unknown', () => {
-    expect(mapFeatureStatesToOptions([{ id: 1, feature: 999 }], [])).toEqual([
-      { name: 'feature 999', value: 1 },
-    ]);
+  it('skips features that have no environment feature state (nothing to PATCH)', () => {
+    const features = [
+      { id: 1, name: 'orphan', environment_feature_state: null },
+      { id: 2, name: 'live', environment_feature_state: { id: 99 } },
+    ];
+    expect(mapFeaturesToOptions(features)).toEqual([{ name: 'live', value: 99 }]);
   });
   it('returns [] for an empty list', () => {
-    expect(mapFeatureStatesToOptions([], [])).toEqual([]);
+    expect(mapFeaturesToOptions([])).toEqual([]);
   });
 });

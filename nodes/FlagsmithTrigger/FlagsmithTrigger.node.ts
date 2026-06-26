@@ -19,7 +19,7 @@ export class FlagsmithTrigger implements INodeType {
 	description: INodeTypeDescription = {
 		displayName: 'Flagsmith Trigger',
 		name: 'flagsmithTrigger',
-		icon: 'file:flagsmith.svg' as Icon,
+		icon: 'file:../../icons/flagsmith.svg' as Icon,
 		group: ['trigger'],
 		version: 1,
 		subtitle: 'on flag change',

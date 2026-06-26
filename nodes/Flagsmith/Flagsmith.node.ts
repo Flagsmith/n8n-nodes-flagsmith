@@ -8,7 +8,7 @@ export class Flagsmith implements INodeType {
 	description: INodeTypeDescription = {
 		displayName: 'Flagsmith',
 		name: 'flagsmith',
-		icon: 'file:flagsmith.svg' as Icon,
+		icon: 'file:../../icons/flagsmith.svg' as Icon,
 		group: ['transform'],
 		version: 1,
 		subtitle: '={{$parameter["operation"] + ": " + $parameter["resource"]}}',

@@ -9,7 +9,7 @@ import {
 export class FlagsmithEnvironmentApi implements ICredentialType {
 	name = 'flagsmithEnvironmentApi';
 	displayName = 'Flagsmith Environment Key API';
-	icon: Icon = 'file:flagsmith.svg';
+	icon: Icon = 'file:../icons/flagsmith.svg';
 	documentationUrl =
 		'https://docs.flagsmith.com/integrating-with-flagsmith/flagsmith-api-overview/flags-api';
 	properties: INodeProperties[] = [

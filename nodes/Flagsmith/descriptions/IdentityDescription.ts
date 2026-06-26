@@ -30,9 +30,9 @@ export const identityOperations: INodeProperties[] = [
 				description: 'Evaluate flags and traits for a specific identity',
 				routing: {
 					request: {
-						method: 'GET',
+						method: 'POST',
 						url: '/identities/',
-						qs: { identifier: '={{$parameter.identifier}}' },
+						body: { identifier: '={{$parameter.identifier}}' },
 					},
 				},
 			},

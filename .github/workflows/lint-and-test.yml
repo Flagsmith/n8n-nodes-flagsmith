@@ -1,4 +1,4 @@
-name: CI
+name: Lint and Test
 
 on:
   pull_request:
@@ -8,7 +8,7 @@ on:
 
 # Cancel in-progress runs for the same branch/PR to avoid wasting CI minutes.
 concurrency:
-  group: ci-$
+  group: ci-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -16,10 +16,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: 'lts/*'
           cache: 'npm'

@@ -9,7 +9,7 @@ import {
 export class FlagsmithAdminApi implements ICredentialType {
 	name = 'flagsmithAdminApi';
 	displayName = 'Flagsmith Admin API';
-	icon: Icon = 'file:flagsmith.svg';
+	icon: Icon = 'file:../icons/flagsmith.svg';
 	documentationUrl =
 		'https://docs.flagsmith.com/integrating-with-flagsmith/flagsmith-api-overview/admin-api';
 	properties: INodeProperties[] = [
