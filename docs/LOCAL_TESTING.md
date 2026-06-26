@@ -61,9 +61,11 @@ Build one workflow: **Manual Trigger, then Flagsmith**. For each operation set t
 1. **Get Flags**: Resource `Environment`, Operation `Get Flags`, credential = Environment Key. Returns all flags for the environment.
 2. **Get Identity Flags**: Resource `Identity`, Operation `Get Identity Flags`, Identifier `test-user`, credential = Environment Key. Returns `{ flags, traits }` for that identity.
 3. **Set Trait**: Resource `Identity`, Operation `Set Trait`, Identifier `test-user`, add a Trait (for example `plan` = `enterprise`), credential = Environment Key. Re-run Get Identity Flags to confirm the trait persisted and any segment-gated flags re-evaluated.
-4. **Update Feature State**: Resource `Feature`, Operation `Update Feature State`, enter your **Environment Key**, then open the **Feature** dropdown. It should populate with your flags by name (this exercises the dynamic lookup). Pick one, set **Enabled State** to `Enable`, optionally set a **Value**, and Execute. Confirm the change in the Flagsmith dashboard, then set **Enabled State** to `Disable` to restore.
+4. **Update Feature State**: Resource `Feature`, Operation `Update Feature State`, enter your **Environment Key**, then open the **Feature** dropdown. It should populate with your flags by name (this exercises the dynamic lookup). Pick one, set **Enabled** on, choose a **Value Type** (Boolean/Integer/String) and a **Value**, and Execute. Confirm the change in the Flagsmith dashboard, then turn **Enabled** off and re-run to restore.
 
-Note: a successful Update Feature State returns `feature_state_value: null` in its response even though the write persists. Confirm the result in the Flagsmith dashboard rather than relying on the response body.
+This operation uses the experimental `update-flag-v2` endpoint, so it works whether or not the environment has Feature Versioning enabled. Because that endpoint sets the full environment-default state, **both** Enabled and Value are sent on every call — there is no value-only or enable-only update.
+
+Note: a successful Update Feature State returns **204 No Content** (an empty output item), even though the write persists. The flags SDK endpoint is also edge-cached for a short while, so confirm the result in the Flagsmith dashboard (or via the Admin API) rather than relying on the response body or an immediate Get Flags.
 
 ## 6. Test the trigger end to end
 
