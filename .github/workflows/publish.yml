@@ -22,9 +22,13 @@ jobs:
         with:
           node-version: 'lts/*'
           cache: 'npm'
+          # BOOTSTRAP: npm cannot configure OIDC trusted publishing for a package
+          # that does not exist yet, so the very first publish authenticates with a
+          # token. Once 0.2.0 is on npm and a Trusted Publisher is configured, revert
+          # this token auth (registry-url here + NODE_AUTH_TOKEN below) back to OIDC.
+          registry-url: 'https://registry.npmjs.org'
 
-      # OIDC trusted publishing requires npm >= 11.5.1; the LTS Node ships npm 10.
-      - name: Upgrade npm for OIDC trusted publishing
+      - name: Upgrade npm
         run: npm install -g npm@latest
 
       - name: Install dependencies
@@ -32,3 +36,5 @@ jobs:
 
       - name: Release
         run: npm run release
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
