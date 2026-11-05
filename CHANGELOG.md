@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.2](https://github.com/Flagsmith/n8n-nodes-flagsmith/compare/v0.2.1...v0.2.2) (2026-11-05)
+
+
+### Bug Fixes
+
+* update feature state through the flag API ([#9](https://github.com/Flagsmith/n8n-nodes-flagsmith/issues/9)) ([d3d235b](https://github.com/Flagsmith/n8n-nodes-flagsmith/commit/d3d235b75cf18eac660750a345b1cdcaba1c8514))
+
 ## [0.2.1](https://github.com/Flagsmith/n8n-nodes-flagsmith/compare/v0.2.0...v0.2.1) (2026-06-26)
 
 
