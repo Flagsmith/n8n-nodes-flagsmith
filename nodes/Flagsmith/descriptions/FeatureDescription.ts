@@ -1,5 +1,5 @@
 import { IExecuteSingleFunctions, IHttpRequestOptions, INodeProperties } from 'n8n-workflow';
-import { experimentsBaseUrl } from '../../shared/features';
+import { flagApiBaseUrl } from '../../shared/features';
 
 export async function buildUpdateFlagBody(
 	this: IExecuteSingleFunctions,
@@ -12,13 +12,13 @@ export async function buildUpdateFlagBody(
 	const valueType = this.getNodeParameter('valueType') as string;
 	const value = this.getNodeParameter('value', '') as string;
 
-	// update-flag-v2 lives under /api/experiments (not /api/v1) and works the same
-	// whether or not the environment has Feature Versioning enabled. It declares
-	// the full environment-default state, so enabled and value are always sent.
-	requestOptions.baseURL = experimentsBaseUrl(credentials.baseUrl as string);
-	requestOptions.url = `/environments/${environment}/update-flag-v2/`;
+	// The flag API lives under /api/__future__ (not /api/v1) and works the same
+	// whether or not the environment has Feature Versioning enabled. This
+	// operation declares the environment-default state, so enabled and value are
+	// always sent; the PATCH leaves variants and segment overrides untouched.
+	requestOptions.baseURL = flagApiBaseUrl(credentials.baseUrl as string);
+	requestOptions.url = `/environments/${environment}/features/${Number(featureId)}/`;
 	requestOptions.body = {
-		feature: { id: Number(featureId) },
 		environment_default: {
 			enabled,
 			value: { type: valueType, value: String(value ?? '') },
@@ -42,8 +42,8 @@ export const featureOperations: INodeProperties[] = [
 				description: 'Set the enabled state and value of a flag in an environment',
 				routing: {
 					request: {
-						method: 'POST',
-						url: '=/environments/{{$parameter.environment}}/update-flag-v2/',
+						method: 'PATCH',
+						url: '=/environments/{{$parameter.environment}}/features/{{$parameter.featureId}}/',
 					},
 					send: { preSend: [buildUpdateFlagBody] },
 				},

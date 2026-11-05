@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { mapFeaturesToOptions, experimentsBaseUrl } from '../nodes/shared/features';
+import { mapFeaturesToOptions, flagApiBaseUrl } from '../nodes/shared/features';
 
 describe('mapFeaturesToOptions', () => {
   it('maps features to {name, feature id} for the dropdown', () => {
@@ -17,20 +17,20 @@ describe('mapFeaturesToOptions', () => {
   });
 });
 
-describe('experimentsBaseUrl', () => {
-  it('rewrites the SaaS /api/v1 base to /api/experiments', () => {
-    expect(experimentsBaseUrl('https://api.flagsmith.com/api/v1')).toBe(
-      'https://api.flagsmith.com/api/experiments',
+describe('flagApiBaseUrl', () => {
+  it('rewrites the SaaS /api/v1 base to /api/__future__', () => {
+    expect(flagApiBaseUrl('https://api.flagsmith.com/api/v1')).toBe(
+      'https://api.flagsmith.com/api/__future__',
     );
   });
   it('handles a trailing slash', () => {
-    expect(experimentsBaseUrl('https://api.flagsmith.com/api/v1/')).toBe(
-      'https://api.flagsmith.com/api/experiments',
+    expect(flagApiBaseUrl('https://api.flagsmith.com/api/v1/')).toBe(
+      'https://api.flagsmith.com/api/__future__',
     );
   });
   it('rewrites self-hosted / Private Cloud overrides', () => {
-    expect(experimentsBaseUrl('https://flagsmith.example.com/api/v1')).toBe(
-      'https://flagsmith.example.com/api/experiments',
+    expect(flagApiBaseUrl('https://flagsmith.example.com/api/v1')).toBe(
+      'https://flagsmith.example.com/api/__future__',
     );
   });
 });
