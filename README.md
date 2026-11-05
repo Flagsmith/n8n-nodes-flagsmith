@@ -71,7 +71,7 @@ Hero example: a deal closes in your CRM and an automation fires, calling Set Tra
 
 Sets a flag's enabled state and value for a specific environment. Pick the feature, set whether it is enabled, and provide a typed value (Boolean, Integer, or String). Both the enabled state and the value are applied on every call — this operation declares the flag's full environment-default state rather than patching individual fields.
 
-This uses Flagsmith's [flag API](https://docs.flagsmith.com/managing-flags/updating-flags), so it works whether or not the environment has [Feature Versioning](https://docs.flagsmith.com/managing-flags/feature-versioning) enabled. It requires Flagsmith 2.263.0 or later, and it cannot update flags in environments with [change requests](https://docs.flagsmith.com/administration-and-security/governance-and-compliance/change-requests) enabled.
+This uses Flagsmith's [flag API](https://docs.flagsmith.com/managing-flags/updating-flags), so it works whether or not the environment has [Feature Versioning](https://docs.flagsmith.com/managing-flags/feature-versioning) enabled. It requires Flagsmith 2.263.0 or later, and it cannot update flags in environments with [change requests](https://docs.flagsmith.com/administration-and-security/governance-and-compliance/change-requests) enabled. In either case the node fails with an error that says so, naming the instance's version where it can.
 
 > **Multivariate flags are not fully supported yet.** You can toggle a multivariate flag's enabled state and set its control value, but not its variant values or weights. Changing only those two fields on a multivariate flag is rarely useful and can be confusing, so this operation is best suited to standard flags.
 
