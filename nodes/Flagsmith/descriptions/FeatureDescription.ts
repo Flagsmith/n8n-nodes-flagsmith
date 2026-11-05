@@ -1,5 +1,19 @@
-import { IExecuteSingleFunctions, IHttpRequestOptions, INodeProperties } from 'n8n-workflow';
-import { experimentsBaseUrl } from '../../shared/features';
+import {
+	IExecuteSingleFunctions,
+	IHttpRequestOptions,
+	IN8nHttpFullResponse,
+	INodeExecutionData,
+	INodeProperties,
+	JsonObject,
+	NodeApiError,
+} from 'n8n-workflow';
+import { flagApiBaseUrl } from '../../shared/features';
+import {
+	classifyFlagWrite,
+	serverVersionFrom,
+	unsupportedMessage,
+	versionUrl,
+} from '../../shared/flagWrite';
 
 export async function buildUpdateFlagBody(
 	this: IExecuteSingleFunctions,
@@ -12,19 +26,67 @@ export async function buildUpdateFlagBody(
 	const valueType = this.getNodeParameter('valueType') as string;
 	const value = this.getNodeParameter('value', '') as string;
 
-	// update-flag-v2 lives under /api/experiments (not /api/v1) and works the same
-	// whether or not the environment has Feature Versioning enabled. It declares
-	// the full environment-default state, so enabled and value are always sent.
-	requestOptions.baseURL = experimentsBaseUrl(credentials.baseUrl as string);
-	requestOptions.url = `/environments/${environment}/update-flag-v2/`;
+	// The flag API lives under /api/__future__ (not /api/v1) and works the same
+	// whether or not the environment has Feature Versioning enabled. This
+	// operation declares the environment-default state, so enabled and value are
+	// always sent; the PATCH leaves variants and segment overrides untouched.
+	requestOptions.baseURL = flagApiBaseUrl(credentials.baseUrl as string);
+	requestOptions.url = `/environments/${environment}/features/${Number(featureId)}/`;
 	requestOptions.body = {
-		feature: { id: Number(featureId) },
 		environment_default: {
 			enabled,
 			value: { type: valueType, value: String(value ?? '') },
 		},
 	};
 	return requestOptions;
+}
+
+// The request ignores HTTP status errors so that this hook sees the response and
+// can explain the failures a user can act on. Every other non-2xx response is
+// raised as n8n would have raised it.
+export async function handleFlagWriteResponse(
+	this: IExecuteSingleFunctions,
+	items: INodeExecutionData[],
+	response: IN8nHttpFullResponse,
+): Promise<INodeExecutionData[]> {
+	const { statusCode, body } = response;
+	const httpCode = String(statusCode);
+	switch (classifyFlagWrite(statusCode, body)) {
+		case 'ok':
+			return items;
+		case 'changeRequestsEnabled':
+			throw new NodeApiError(this.getNode(), body as JsonObject, {
+				httpCode,
+				message: 'This environment has change requests enabled, so its flags cannot be updated directly',
+				description:
+					'Make the change through a change request in Flagsmith, or disable change requests for this environment.',
+			});
+		case 'unsupported': {
+			// Only look the version up on this failure path, to name it in the error.
+			// /version/ doesn't need authentication, but the request goes to the
+			// configured instance either way.
+			const credentials = await this.getCredentials('flagsmithAdminApi');
+			let serverVersion: string | undefined;
+			try {
+				serverVersion = serverVersionFrom(
+					await this.helpers.httpRequestWithAuthentication.call(this, 'flagsmithAdminApi', {
+						method: 'GET',
+						url: versionUrl(credentials.baseUrl as string),
+						json: true,
+					}),
+				);
+			} catch {
+				serverVersion = undefined;
+			}
+			throw new NodeApiError(this.getNode(), (body ?? {}) as JsonObject, {
+				httpCode,
+				message: unsupportedMessage(serverVersion),
+				description: 'Upgrade your Flagsmith instance to use this operation.',
+			});
+		}
+		default:
+			throw new NodeApiError(this.getNode(), (body ?? {}) as JsonObject, { httpCode });
+	}
 }
 
 export const featureOperations: INodeProperties[] = [
@@ -42,10 +104,12 @@ export const featureOperations: INodeProperties[] = [
 				description: 'Set the enabled state and value of a flag in an environment',
 				routing: {
 					request: {
-						method: 'POST',
-						url: '=/environments/{{$parameter.environment}}/update-flag-v2/',
+						method: 'PATCH',
+						url: '=/environments/{{$parameter.environment}}/features/{{$parameter.featureId}}/',
+						ignoreHttpStatusErrors: true,
 					},
 					send: { preSend: [buildUpdateFlagBody] },
+					output: { postReceive: [handleFlagWriteResponse] },
 				},
 			},
 		],
